@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hệ thống Đánh giá Hiệu suất & Đề xuất Thưởng Minh bạch</title>
+  
+  <!-- Inter Font Family -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Core Styles -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <div id="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="app-sidebar" id="app-sidebar">
+      <div class="sidebar-header">
+        <div class="logo-icon">ĐG</div>
+        <div class="logo-text">
+          <h1>Cổng Đánh Giá & Thưởng</h1>
+          <span>Đánh giá Hiệu suất Minh bạch</span>
+        </div>
+      </div>
+
+      <!-- Role Indicator Banner -->
+      <div class="sidebar-role-indicator" id="sidebar-role-indicator">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Nav Items -->
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <!-- Rendered dynamically based on current role -->
+      </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <button class="btn btn-secondary w-full btn-sm" onclick="App.resetMockData()" title="Khôi phục trạng thái ban đầu để kiểm thử lại từ đầu">
+          <span>🔄 Khôi phục Dữ liệu Mẫu</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="app-main" id="app-main">
+      <!-- Topbar Header -->
+      <header class="app-topbar">
+        <div class="topbar-left">
+          <!-- Mobile Toggle Button -->
+          <button class="btn-icon mobile-menu-btn" style="display: none;" onclick="document.getElementById('app-sidebar').classList.toggle('mobile-open')">
+            ☰
+          </button>
+
+          <!-- Period Selector -->
+          <div class="period-selector-wrapper">
+            <label for="period-select">Kỳ đánh giá:</label>
+            <select id="period-select" class="period-select">
+              <!-- Rendered dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Role Switcher Toolbar (Demo Feature) -->
+          <div class="role-switcher">
+            <span class="role-switcher-label">
+              <span>🎭 Góc nhìn vai trò:</span>
+            </span>
+            <select id="role-select" class="role-select">
+              <option value="hr">Nhân sự / Quản trị viên (Nguyễn Văn HR)</option>
+              <option value="manager">Quản lý trực tiếp (Trần Thị Quản Lý)</option>
+              <option value="employee">Nhân viên (Lê Văn Nhân Viên)</option>
+              <option value="director">Ban Giám đốc (Phạm Văn Giám Đốc)</option>
+              <option value="accountant">Kế toán (Hoàng Thị Kế Toán)</option>
+            </select>
+          </div>
+
+          <!-- AI Failure Simulation Toggle (BRL-22, 7.4) -->
+          <div class="flex items-center gap-1" style="background: #faf5ff; border: 1px solid #d8b4fe; padding: 4px 8px; border-radius: 6px; font-size: 11px;">
+            <label for="ai-offline-toggle" style="cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 600; color: var(--color-ai);">
+              <input type="checkbox" id="ai-offline-toggle" style="cursor: pointer;">
+              <span>Mô phỏng Sự cố AI (Ngoại tuyến / Chậm)</span>
+            </label>
+          </div>
+
+          <!-- Notifications Icon -->
+          <button class="btn-icon" onclick="App.navigateTo('shared-notifications')" title="Thông báo hệ thống">
+            <span>🔔</span>
+            <span class="badge-dot" id="topbar-notif-dot"></span>
+          </button>
+
+          <!-- User Profile -->
+          <div class="topbar-user" onclick="App.navigateTo('shared-notifications')">
+            <div class="user-avatar" id="topbar-user-avatar">HR</div>
+            <div class="user-info">
+              <span class="user-name" id="topbar-user-name">Nguyễn Văn HR</span>
+              <span class="user-role-text" id="topbar-user-role">Trưởng phòng Nhân sự</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content Container (Dynamic Router View) -->
+      <div class="content-wrapper">
+        <div id="main-content-view">
+          <!-- Views render here dynamically -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Scripts Loading in Strict Dependency Order -->
+  <script src="js/data/initial-data.js"></script>
+  <script src="js/data/storage.js"></script>
+  <script src="js/engine/calculation.js"></script>
+  <script src="js/engine/validation.js"></script>
+  <script src="js/engine/ai-assistant.js"></script>
+  <script src="js/engine/csv-importer.js"></script>
+  <script src="js/views/shell.js"></script>
+  <script src="js/views/hr-views.js"></script>
+  <script src="js/views/manager-views.js"></script>
+  <script src="js/views/employee-views.js"></script>
+  <script src="js/views/director-views.js"></script>
+  <script src="js/views/accountant-views.js"></script>
+  <script src="js/views/shared-views.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
