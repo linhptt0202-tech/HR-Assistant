@@ -5,7 +5,7 @@
 
 window.HRViews = {
   // 1. HR Dashboard Control Center (Design Prompt Mục 11 & 33)
-  renderDashboard: function(data, container) {
+  renderDashboard: function (data, container) {
     const period = window.AppStorage.getActivePeriod();
     const employees = data.employees;
     const evaluations = data.evaluations[period.id] || [];
@@ -15,10 +15,10 @@ window.HRViews = {
     const totalEmployees = employees.length;
     const selfDoneCount = evaluations.filter(e => e.selfReviewStatus === 'submitted').length;
     const selfPct = totalEmployees > 0 ? Math.round((selfDoneCount / totalEmployees) * 100) : 0;
-    
+
     const mgrDoneCount = evaluations.filter(e => e.managerReviewStatus === 'completed').length;
     const mgrPct = totalEmployees > 0 ? Math.round((mgrDoneCount / totalEmployees) * 100) : 0;
-    
+
     const pendingWarnings = warnings.filter(w => w.status === 'pending').length;
     const severeWarnings = warnings.filter(w => w.severity === 'severe' && w.status === 'pending').length;
 
@@ -65,16 +65,16 @@ window.HRViews = {
       <div class="card" style="padding: 16px 24px;">
         <div class="workflow-stepper">
           ${steps.map((step, idx) => {
-            let stateClass = '';
-            if (idx < currentStepIdx) stateClass = 'completed';
-            else if (idx === currentStepIdx) stateClass = 'active';
-            return `
+      let stateClass = '';
+      if (idx < currentStepIdx) stateClass = 'completed';
+      else if (idx === currentStepIdx) stateClass = 'active';
+      return `
               <div class="step-item ${stateClass}">
                 <div class="step-circle">${idx < currentStepIdx ? '✓' : idx + 1}</div>
                 <div class="step-label">${step.label}</div>
               </div>
             `;
-          }).join('')}
+    }).join('')}
         </div>
       </div>
 
@@ -213,7 +213,7 @@ window.HRViews = {
   },
 
   // 2. Calibration Workspace Center (Design Prompt Mục 16 & 36)
-  renderCalibration: function(data, container) {
+  renderCalibration: function (data, container) {
     const period = window.AppStorage.getActivePeriod();
     const employees = data.employees;
     const evaluations = data.evaluations[period.id] || [];
@@ -227,6 +227,19 @@ window.HRViews = {
       data.defaultConfig
     );
 
+    // Identify deviated evaluations (điểm tự chấm và điểm quản lý lệch nhau)
+    const deviatedEmployees = employees.filter(emp => {
+      const ev = evaluations.find(e => e.employeeId === emp.id);
+      const hasManagerScore = ev && ev.managerReviewStatus === 'completed' && ev.managerTotalScore !== null && ev.managerTotalScore !== undefined;
+      const hasSelfScore = ev && ev.selfReviewStatus === 'submitted' && ev.selfTotalScore !== null && ev.selfTotalScore !== undefined;
+      return hasSelfScore && hasManagerScore && Math.abs(ev.selfTotalScore - ev.managerTotalScore) > 0.05;
+    });
+    const deviatedCount = deviatedEmployees.length;
+    const unhandledDeviatedCount = deviatedEmployees.filter(emp => {
+      const ev = evaluations.find(e => e.employeeId === emp.id);
+      return !ev || !ev.hrComment || ev.hrComment.trim().length === 0;
+    }).length;
+
     // Check transition validation
     const canApprove = window.ValidationEngine.canTransitionPeriod('calibration', 'approved', period, data);
 
@@ -237,7 +250,7 @@ window.HRViews = {
             <span>Nhân sự</span> / <span>Cân đối điểm đánh giá</span>
           </div>
           <h1 class="page-title">Không Gian Cân Đối Điểm — ${period.name}</h1>
-          <div class="page-subtitle">Rà soát điểm đa chiều, xử lý cảnh báo AI, điều chỉnh điểm có lý do & chuẩn bị trình phê duyệt</div>
+          <div class="page-subtitle">Rà soát điểm đa chiều, xử lý cảnh báo AI, ghi nhận xét cân đối điểm & chuẩn bị trình phê duyệt</div>
         </div>
         <div class="page-actions">
           <button class="btn btn-secondary" onclick="App.navigateTo('hr-bonus')">
@@ -275,9 +288,9 @@ window.HRViews = {
 
         <div style="display: flex; flex-direction: column; gap: 12px;">
           ${warnings.map(w => {
-            const isSevere = w.severity === 'severe';
-            const isPending = w.status === 'pending';
-            return `
+      const isSevere = w.severity === 'severe';
+      const isPending = w.status === 'pending';
+      return `
               <div style="padding: 12px; border: 1px solid ${isSevere ? '#fecaca' : '#fed7aa'}; background: #fff; border-radius: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
                 <div style="flex: 1;">
                   <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
@@ -306,17 +319,17 @@ window.HRViews = {
                 </div>
               </div>
             `;
-          }).join('')}
+    }).join('')}
         </div>
       </div>
 
       <!-- Calibration Data Table -->
       <div class="card">
-        <div class="card-header">
-          <div class="card-title">Bảng tổng hợp điểm & điều chỉnh điểm cân đối</div>
-          <div class="flex gap-2">
-            <input type="text" id="calib-search" class="form-control" placeholder="Tìm tên, mã nhân viên..." style="width: 220px;" oninput="HRViews.filterCalibrationTable()">
-            <select id="calib-dept-filter" class="form-control" style="width: 160px;" onchange="HRViews.filterCalibrationTable()">
+        <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
+          <div class="card-title">Bảng tổng hợp điểm & rà soát cân đối</div>
+          <div class="flex items-center gap-2" style="flex-wrap: wrap;">
+            <input type="text" id="calib-search" class="form-control" placeholder="Tìm tên, mã nhân viên..." style="width: 200px;" oninput="HRViews.filterCalibrationTable()">
+            <select id="calib-dept-filter" class="form-control" style="width: 150px;" onchange="HRViews.filterCalibrationTable()">
               <option value="ALL">Tất cả phòng ban</option>
               <option value="Kỹ thuật">Kỹ thuật</option>
               <option value="Kinh doanh">Kinh doanh</option>
@@ -324,6 +337,34 @@ window.HRViews = {
               <option value="Nhân sự">Nhân sự</option>
               <option value="Vận hành">Vận hành</option>
             </select>
+            <select id="calib-status-filter" class="form-control" style="width: 165px;" onchange="HRViews.filterCalibrationTable()">
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="DEVIATED">⚠️ Cần rà soát (${unhandledDeviatedCount})</option>
+              <option value="COMMENTED">✓ Đã nhận xét (${deviatedCount - unhandledDeviatedCount})</option>
+              <option value="VALID">Hợp lệ</option>
+            </select>
+            ${deviatedCount > 0 ? `
+              <button class="btn btn-sm btn-secondary" onclick="HRViews.selectAllDeviated()" title="Chọn nhanh toàn bộ các phiếu có điểm tự chấm và điểm quản lý lệch nhau">
+                <span>⚡ Chọn tất cả phiếu lệch (${deviatedCount})</span>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- Bulk Action Toolbar -->
+        <div id="calib-bulk-bar" style="display: none; align-items: center; justify-content: space-between; background: #eff6ff; border: 1px solid #bfdbfe; padding: 10px 16px; border-radius: 8px; margin: 12px 16px 0 16px;">
+          <div class="flex items-center gap-2">
+            <span style="font-size: 16px;">☑️</span>
+            <span class="font-bold text-primary">Đã chọn <span id="calib-selected-count">0</span> phiếu cần rà soát</span>
+            <span class="text-xs text-muted">(Áp dụng nhận xét hoặc chỉ đạo đối thoại đồng thời cho nhiều nhân sự)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="btn btn-sm btn-primary" onclick="HRViews.openBulkCommentModal()">
+              <span>📝 Nhận xét hàng loạt</span>
+            </button>
+            <button class="btn btn-sm btn-secondary" onclick="HRViews.clearSelection()">
+              <span>Bỏ chọn</span>
+            </button>
           </div>
         </div>
 
@@ -331,12 +372,16 @@ window.HRViews = {
           <table class="data-table" id="calib-table">
             <thead>
               <tr>
+                <th style="width: 38px; text-align: center;">
+                  <input type="checkbox" id="calib-check-all" onchange="HRViews.toggleSelectAll(this.checked)" title="Chọn tất cả phiếu lệch">
+                </th>
                 <th>Mã NV</th>
                 <th>Họ và tên</th>
                 <th>Phòng ban</th>
                 <th>Điểm Tự chấm</th>
                 <th>Điểm Quản lý</th>
-                <th>Điểm Hiệu chỉnh (HR)</th>
+                <th>Độ lệch</th>
+                <th>Ý kiến / Nhận xét HR</th>
                 <th>Xếp hạng</th>
                 <th>Thâm niên</th>
                 <th>Thưởng dự kiến</th>
@@ -346,18 +391,33 @@ window.HRViews = {
             </thead>
             <tbody>
               ${employees.map(emp => {
-                const ev = evaluations.find(e => e.employeeId === emp.id);
-                const bonusItem = bonusResult.items.find(b => b.employeeId === emp.id);
-                const hasScore = ev && ev.managerReviewStatus === 'completed';
-                const score = ev ? (ev.isAdjusted ? ev.adjustedScore : ev.managerTotalScore) : 0;
-                const rank = bonusItem ? bonusItem.rank : 'C';
+      const ev = evaluations.find(e => e.employeeId === emp.id);
+      const bonusItem = bonusResult.items.find(b => b.employeeId === emp.id);
+      const hasManagerScore = ev && ev.managerReviewStatus === 'completed' && ev.managerTotalScore !== null && ev.managerTotalScore !== undefined;
+      const hasSelfScore = ev && ev.selfReviewStatus === 'submitted' && ev.selfTotalScore !== null && ev.selfTotalScore !== undefined;
+      const diff = (hasSelfScore && hasManagerScore) ? Math.abs(ev.selfTotalScore - ev.managerTotalScore) : 0;
+      const isDeviated = (hasSelfScore && hasManagerScore) && diff > 0.05;
+      const hasHrComment = ev && ev.hrComment && ev.hrComment.trim().length > 0;
+      const rank = bonusItem ? bonusItem.rank : 'C';
 
-                let rowClass = '';
-                if (ev && ev.isAdjusted) rowClass = 'row-flagged';
-                if (emp.isDisqualified) rowClass = 'row-severe';
+      let rowStatus = 'VALID';
+      if (emp.isDisqualified) {
+        rowStatus = 'DISQUALIFIED';
+      } else if (isDeviated) {
+        rowStatus = hasHrComment ? 'COMMENTED' : 'DEVIATED';
+      }
 
-                return `
-                  <tr class="${rowClass}">
+      let rowClass = '';
+      if (isDeviated && !hasHrComment) rowClass = 'row-flagged';
+      if (emp.isDisqualified) rowClass = 'row-severe';
+
+      const diffSign = (hasSelfScore && hasManagerScore) ? (ev.selfTotalScore >= ev.managerTotalScore ? '+' : '-') : '';
+
+      return `
+                  <tr class="${rowClass}" data-status="${rowStatus}">
+                    <td style="text-align: center;">
+                      <input type="checkbox" class="calib-row-check" value="${emp.id}" ${!isDeviated ? 'disabled title="Phiếu không có độ lệch điểm"' : ''} onchange="HRViews.onRowCheckboxChange()">
+                    </td>
                     <td class="font-bold text-xs">${emp.code}</td>
                     <td>
                       <div class="font-semibold">${emp.name}</div>
@@ -365,22 +425,29 @@ window.HRViews = {
                     </td>
                     <td>${emp.department}</td>
                     <td>
-                      ${ev && ev.selfReviewStatus === 'submitted' 
-                        ? `<span class="font-medium">${ev.selfTotalScore.toFixed(2)}</span>`
-                        : `<span class="badge badge-manager-review">Không tự chấm</span>`}
+                      ${hasSelfScore
+          ? `<span class="font-medium">${ev.selfTotalScore.toFixed(2)}</span>`
+          : `<span class="badge badge-manager-review">Không tự chấm</span>`}
                     </td>
                     <td>
-                      ${hasScore ? `<span class="font-semibold">${ev.managerTotalScore.toFixed(2)}</span>` : '<span class="text-muted">Chưa chấm</span>'}
+                      ${hasManagerScore ? `<span class="font-semibold">${ev.managerTotalScore.toFixed(2)}</span>` : '<span class="text-muted">Chưa chấm</span>'}
                     </td>
                     <td>
-                      ${ev && ev.isAdjusted ? `
-                        <div>
-                          <span class="font-bold text-primary">${ev.adjustedScore.toFixed(2)}</span>
-                          <span class="badge badge-warning-normal" title="${ev.adjustmentReason}">Đã sửa</span>
-                        </div>
-                        <div class="text-xs text-muted">Gốc: ${ev.originalManagerScore.toFixed(2)}</div>
+                      ${isDeviated ? `
+                        <span class="badge ${diff > 1.0 ? 'badge-warning-severe' : 'badge-warning-normal'}" title="Tự chấm: ${ev.selfTotalScore.toFixed(2)} | QL chấm: ${ev.managerTotalScore.toFixed(2)}">
+                          ${diffSign}${diff.toFixed(2)}
+                        </span>
                       ` : `
-                        <span class="text-muted">${hasScore ? ev.managerTotalScore.toFixed(2) : '-'}</span>
+                        <span class="text-muted text-xs">${hasSelfScore && hasManagerScore ? '0.00' : '-'}</span>
+                      `}
+                    </td>
+                    <td>
+                      ${hasHrComment ? `
+                        <div class="text-xs" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #1e40af;" title="${ev.hrComment}">
+                          <b>💬</b> ${ev.hrComment}
+                        </div>
+                      ` : `
+                        <span class="text-muted text-xs">-</span>
                       `}
                     </td>
                     <td>
@@ -400,9 +467,13 @@ window.HRViews = {
                     <td>
                       ${emp.isDisqualified ? `
                         <span class="badge badge-draft" title="${emp.disqualifiedReason}">Bị loại thưởng</span>
-                      ` : ev && ev.needsDirectorConfirm ? `
-                        <span class="badge badge-warning-severe">Cần GĐ duyệt</span>
-                      ` : `
+                      ` : isDeviated ? (
+          hasHrComment ? `
+                          <span class="badge badge-approved" title="Đã có nhận xét: ${ev.hrComment}">✓ Đã nhận xét</span>
+                        ` : `
+                          <span class="badge badge-warning-normal" title="Điểm tự chấm (${ev.selfTotalScore.toFixed(2)}) lệch ${diff.toFixed(2)}đ so với điểm Quản lý (${ev.managerTotalScore.toFixed(2)})">⚠️ Cần rà soát</span>
+                        `
+        ) : `
                         <span class="badge badge-approved">Hợp lệ</span>
                       `}
                     </td>
@@ -410,7 +481,11 @@ window.HRViews = {
                       <div class="flex justify-end gap-1">
                         <button class="btn btn-sm btn-secondary" onclick="SharedViews.openSelfReviewModal('${emp.id}', '${period.id}')" title="Xem phiếu tự đánh giá của nhân viên">Phiếu tự chấm</button>
                         <button class="btn btn-sm btn-secondary" onclick="SharedViews.openManagerReviewModal('${emp.id}', '${period.id}')" title="Xem phiếu quản lý chấm">Phiếu QL</button>
-                        <button class="btn btn-sm btn-secondary" onclick="HRViews.openEditScoreModal('${emp.id}')">Sửa điểm</button>
+                        ${isDeviated ? `
+                          <button class="btn btn-sm ${hasHrComment ? 'btn-secondary' : 'btn-primary'}" onclick="HRViews.openCommentModal('${emp.id}')" title="${hasHrComment ? 'Xem hoặc sửa nhận xét HR' : 'Ghi nhận xét / yêu cầu đối thoại'}">
+                            ${hasHrComment ? '✏️ Sửa ý kiến' : '💬 Nhận xét'}
+                          </button>
+                        ` : ''}
                         <button class="btn btn-sm ${emp.isDisqualified ? 'btn-success' : 'btn-danger'}" onclick="HRViews.toggleDisqualify('${emp.id}')" title="Loại hoặc khôi phục thưởng">
                           ${emp.isDisqualified ? 'Khôi phục' : 'Kỷ luật'}
                         </button>
@@ -418,7 +493,7 @@ window.HRViews = {
                     </td>
                   </tr>
                 `;
-              }).join('')}
+    }).join('')}
             </tbody>
           </table>
         </div>
@@ -427,7 +502,7 @@ window.HRViews = {
   },
 
   // Modal: Điều chỉnh điểm nhân viên tại Calibration (BRL-16 & BRL-17)
-  openEditScoreModal: function(employeeId) {
+  openEditScoreModal: function (employeeId) {
     const data = window.AppStorage.load();
     const period = window.AppStorage.getActivePeriod();
     const employee = data.employees.find(e => e.id === employeeId);
@@ -481,7 +556,7 @@ window.HRViews = {
     this.previewScoreImpact(ev.managerTotalScore);
   },
 
-  previewScoreImpact: function(originalScore) {
+  previewScoreImpact: function (originalScore) {
     const input = document.getElementById('input-new-score');
     const preview = document.getElementById('score-impact-preview');
     if (!input || !preview) return;
@@ -499,7 +574,7 @@ window.HRViews = {
     preview.innerHTML = html;
   },
 
-  saveScoreAdjustment: function(employeeId, originalScore) {
+  saveScoreAdjustment: function (employeeId, originalScore) {
     const newScoreInput = document.getElementById('input-new-score');
     const reasonInput = document.getElementById('input-adjust-reason');
 
@@ -571,7 +646,7 @@ window.HRViews = {
   },
 
   // Toggle Disqualify from bonus (BRL-09 & BRL-21)
-  toggleDisqualify: function(employeeId) {
+  toggleDisqualify: function (employeeId) {
     const data = window.AppStorage.load();
     const period = window.AppStorage.getActivePeriod();
     const employee = data.employees.find(e => e.id === employeeId);
@@ -623,7 +698,7 @@ window.HRViews = {
   },
 
   // Modal Xử lý cảnh báo AI (Bias Detector action: Chấp nhận, Sửa, Bỏ qua)
-  openResolveWarningModal: function(warningId) {
+  openResolveWarningModal: function (warningId) {
     const data = window.AppStorage.load();
     const warning = data.aiWarnings.find(w => w.id === warningId);
 
@@ -666,7 +741,7 @@ window.HRViews = {
     document.body.insertAdjacentHTML('beforeend', modalHtml);
   },
 
-  submitResolveWarning: function(warningId) {
+  submitResolveWarning: function (warningId) {
     const actionSelect = document.getElementById('select-warn-action');
     const reasonInput = document.getElementById('input-warn-reason');
 
@@ -710,7 +785,7 @@ window.HRViews = {
   },
 
   // Modal: Trình Giám đốc phê duyệt kỳ
-  openSendToDirectorModal: function(periodId) {
+  openSendToDirectorModal: function (periodId) {
     const data = window.AppStorage.load();
     const period = window.AppStorage.getActivePeriod();
     const canApprove = window.ValidationEngine.canTransitionPeriod('calibration', 'approved', period, data);
@@ -748,7 +823,7 @@ window.HRViews = {
   },
 
   // 3. Bonus Allocation Center (Design Prompt Mục 17 & 37)
-  renderBonusCenter: function(data, container) {
+  renderBonusCenter: function (data, container) {
     const period = window.AppStorage.getActivePeriod();
     const employees = data.employees;
     const evaluations = data.evaluations[period.id] || [];
@@ -882,7 +957,7 @@ window.HRViews = {
   },
 
   // Modal Giải thích chi tiết thưởng bằng AI (BRL-13, Prompt 17.4)
-  explainEmployeeBonus: function(employeeId) {
+  explainEmployeeBonus: function (employeeId) {
     const data = window.AppStorage.load();
     const period = window.AppStorage.getActivePeriod();
     const bonusResult = window.CalculationEngine.calculateBonusAllocation(
@@ -926,7 +1001,7 @@ window.HRViews = {
   },
 
   // Modal Mô phỏng kịch bản giả định (What-if Simulation)
-  openAISimulatorModal: function() {
+  openAISimulatorModal: function () {
     const data = window.AppStorage.load();
     const period = window.AppStorage.getActivePeriod();
 
@@ -969,7 +1044,7 @@ window.HRViews = {
     this.runSimulation();
   },
 
-  runSimulation: function() {
+  runSimulation: function () {
     const fundInput = document.getElementById('sim-fund');
     const coeffSInput = document.getElementById('sim-coeff-s');
     const container = document.getElementById('sim-results-container');
@@ -1008,9 +1083,9 @@ window.HRViews = {
             </thead>
             <tbody>
               ${sim.result.items.slice(0, 7).map(item => {
-                const official = window.CalculationEngine.calculateBonusAllocation(period.totalBonusFund, data.employees, data.evaluations[period.id] || [], data.defaultConfig).items.find(o => o.employeeId === item.employeeId);
-                const diff = item.finalBonus - (official ? official.finalBonus : 0);
-                return `
+      const official = window.CalculationEngine.calculateBonusAllocation(period.totalBonusFund, data.employees, data.evaluations[period.id] || [], data.defaultConfig).items.find(o => o.employeeId === item.employeeId);
+      const diff = item.finalBonus - (official ? official.finalBonus : 0);
+      return `
                   <tr>
                     <td>${item.employeeCode}</td>
                     <td>${item.employeeName}</td>
@@ -1020,7 +1095,7 @@ window.HRViews = {
                     <td style="color: ${diff >= 0 ? 'green' : 'red'};">${diff >= 0 ? '+' : ''}${diff.toLocaleString()} đ</td>
                   </tr>
                 `;
-              }).join('')}
+    }).join('')}
             </tbody>
           </table>
         </div>
@@ -1028,9 +1103,10 @@ window.HRViews = {
     `;
   },
 
-  filterCalibrationTable: function() {
+  filterCalibrationTable: function () {
     const searchVal = (document.getElementById('calib-search')?.value || '').toLowerCase();
     const deptVal = document.getElementById('calib-dept-filter')?.value || 'ALL';
+    const statusVal = document.getElementById('calib-status-filter')?.value || 'ALL';
 
     const table = document.getElementById('calib-table');
     if (!table) return;
@@ -1038,9 +1114,363 @@ window.HRViews = {
     const rows = table.querySelectorAll('tbody tr');
     rows.forEach(r => {
       const text = r.textContent.toLowerCase();
+      const rowStatus = r.getAttribute('data-status') || '';
       const matchSearch = text.includes(searchVal);
       const matchDept = deptVal === 'ALL' || text.includes(deptVal.toLowerCase());
-      r.style.display = (matchSearch && matchDept) ? '' : 'none';
+      const matchStatus = statusVal === 'ALL' || rowStatus === statusVal;
+      r.style.display = (matchSearch && matchDept && matchStatus) ? '' : 'none';
     });
+    this.updateBulkBar();
+  },
+
+  toggleSelectAll: function (checked) {
+    const checkboxes = document.querySelectorAll('.calib-row-check:not(:disabled)');
+    checkboxes.forEach(cb => {
+      const tr = cb.closest('tr');
+      if (!tr || tr.style.display !== 'none') {
+        cb.checked = checked;
+      }
+    });
+    this.updateBulkBar();
+  },
+
+  onRowCheckboxChange: function () {
+    this.updateBulkBar();
+  },
+
+  selectAllDeviated: function () {
+    const checkboxes = document.querySelectorAll('.calib-row-check:not(:disabled)');
+    checkboxes.forEach(cb => {
+      const tr = cb.closest('tr');
+      if (!tr || tr.style.display !== 'none') {
+        cb.checked = true;
+      }
+    });
+    const checkAll = document.getElementById('calib-check-all');
+    if (checkAll) checkAll.checked = true;
+    this.updateBulkBar();
+  },
+
+  clearSelection: function () {
+    const checkboxes = document.querySelectorAll('.calib-row-check');
+    checkboxes.forEach(cb => cb.checked = false);
+    const checkAll = document.getElementById('calib-check-all');
+    if (checkAll) checkAll.checked = false;
+    this.updateBulkBar();
+  },
+
+  updateBulkBar: function () {
+    const checkedBoxes = Array.from(document.querySelectorAll('.calib-row-check:checked'));
+    const count = checkedBoxes.length;
+    const bar = document.getElementById('calib-bulk-bar');
+    const countSpan = document.getElementById('calib-selected-count');
+    const checkAll = document.getElementById('calib-check-all');
+
+    if (countSpan) countSpan.textContent = count;
+
+    if (bar) {
+      if (count > 0) {
+        bar.style.display = 'flex';
+      } else {
+        bar.style.display = 'none';
+      }
+    }
+
+    const totalEnabled = document.querySelectorAll('.calib-row-check:not(:disabled)').length;
+    if (checkAll) {
+      checkAll.checked = totalEnabled > 0 && count === totalEnabled;
+    }
+  },
+
+  // Modal: Nhận xét rà soát cho phiếu lệch điểm đơn lẻ
+  openCommentModal: function (employeeId) {
+    const data = window.AppStorage.load();
+    const period = window.AppStorage.getActivePeriod();
+    const employee = data.employees.find(e => e.id === employeeId);
+    const ev = (data.evaluations[period.id] || []).find(e => e.employeeId === employeeId);
+
+    if (!employee || !ev) {
+      window.ShellView.showToast('Lỗi', 'Không tìm thấy dữ liệu đánh giá của nhân viên.', 'danger');
+      return;
+    }
+
+    const selfScore = (ev.selfTotalScore !== null && ev.selfTotalScore !== undefined) ? ev.selfTotalScore.toFixed(2) : 'Không tự chấm';
+    const mgrScore = (ev.managerTotalScore !== null && ev.managerTotalScore !== undefined) ? ev.managerTotalScore.toFixed(2) : 'Chưa chấm';
+    const diff = (ev.selfTotalScore !== null && ev.managerTotalScore !== null) ? Math.abs(ev.selfTotalScore - ev.managerTotalScore).toFixed(2) : '0.00';
+    const currentComment = ev.hrComment || '';
+
+    const modalHtml = `
+      <div class="modal-backdrop" id="hr-comment-modal">
+        <div class="modal-dialog" style="max-width: 620px;">
+          <div class="modal-header">
+            <div class="modal-title">💬 Ghi Nhận Xét Rà Soát — ${employee.name} (${employee.code})</div>
+            <button onclick="document.getElementById('hr-comment-modal').remove()" style="font-size: 20px;">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div style="background: #f8fafc; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #2563eb;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
+                <div><b>Phòng ban:</b> ${employee.department}</div>
+                <div><b>Chức danh:</b> ${employee.title}</div>
+                <div><b>Điểm Tự chấm:</b> <span class="font-bold text-primary">${selfScore}</span></div>
+                <div><b>Điểm Quản lý chấm:</b> <span class="font-bold text-primary">${mgrScore}</span></div>
+                <div style="grid-column: span 2; margin-top: 4px; padding-top: 6px; border-top: 1px dashed #cbd5e1;">
+                  <b>Độ lệch điểm:</b> <span class="badge badge-warning-severe">Lệch ${diff} điểm</span>
+                  <span class="text-xs text-muted" style="margin-left: 8px;">(HR rà soát định hướng đối thoại, không trực tiếp sửa điểm)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Gợi ý mẫu nhận xét nhanh (1-click)</label>
+              <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;">
+                <button type="button" class="btn btn-sm btn-secondary" style="text-align: left; justify-content: flex-start;" onclick="HRViews.applySingleTemplate('Đề nghị Quản lý trực tiếp và Nhân viên đối thoại lại để làm rõ minh chứng các tiêu chí có độ lệch điểm lớn.')">
+                  📋 1. Đề nghị QL và NV đối thoại lại minh chứng tiêu chí
+                </button>
+                <button type="button" class="btn btn-sm btn-secondary" style="text-align: left; justify-content: flex-start;" onclick="HRViews.applySingleTemplate('Ghi nhận điểm tự chấm có chênh lệch; HR đề xuất giữ nguyên điểm đánh giá của Quản lý sau khi rà soát hồ sơ.')">
+                  ⚖️ 2. Giữ nguyên điểm Quản lý sau khi rà soát hồ sơ
+                </button>
+                <button type="button" class="btn btn-sm btn-secondary" style="text-align: left; justify-content: flex-start;" onclick="HRViews.applySingleTemplate('Yêu cầu Quản lý bổ sung thêm dữ liệu đo lường cụ thể cho các tiêu chí có chênh lệch trước khi trình Giám đốc.')">
+                  🔍 3. Yêu cầu Quản lý bổ sung dữ liệu đo lường cụ thể
+                </button>
+                <button type="button" class="btn btn-sm btn-secondary" style="text-align: left; justify-content: flex-start;" onclick="HRViews.applySingleTemplate('Đã rà soát: Độ lệch nằm trong phạm vi chấp nhận được, thống nhất chuyển kết quả trình Giám đốc phê duyệt.')">
+                  🎯 4. Đã rà soát hợp lệ, thống nhất trình Giám đốc
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Nội dung nhận xét / Ý kiến HR <span class="required">*</span></label>
+              <textarea id="input-single-hr-comment" class="form-control" rows="4" placeholder="Nhập ý kiến nhận xét của HR về sự chênh lệch điểm...">${currentComment}</textarea>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                <input type="checkbox" id="notify-manager-single" checked>
+                <span>Gửi thông báo đến Quản lý trực tiếp phòng ban</span>
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="document.getElementById('hr-comment-modal').remove()">Hủy</button>
+            <button class="btn btn-primary" onclick="HRViews.saveSingleComment('${employeeId}')">Lưu nhận xét</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+  },
+
+  applySingleTemplate: function (text) {
+    const el = document.getElementById('input-single-hr-comment');
+    if (el) el.value = text;
+  },
+
+  saveSingleComment: function (employeeId) {
+    const commentEl = document.getElementById('input-single-hr-comment');
+    const notifyCheck = document.getElementById('notify-manager-single');
+    const comment = (commentEl?.value || '').trim();
+
+    if (!comment) {
+      alert('Vui lòng nhập nội dung nhận xét trước khi lưu.');
+      return;
+    }
+
+    const data = window.AppStorage.load();
+    const period = window.AppStorage.getActivePeriod();
+    const employee = data.employees.find(e => e.id === employeeId);
+    const ev = (data.evaluations[period.id] || []).find(e => e.employeeId === employeeId);
+
+    if (!employee || !ev) return;
+
+    ev.hrComment = comment;
+    ev.hrCommentAt = new Date().toISOString();
+    ev.hrCommentBy = 'Nguyễn Văn HR';
+
+    window.AppStorage.save(data);
+
+    // Add Audit Log
+    window.AppStorage.addAuditLog({
+      periodId: period.id,
+      periodName: period.name,
+      actorName: 'Nguyễn Văn HR',
+      actorRole: 'HR / Admin',
+      actionType: 'HR_REVIEW_COMMENT',
+      targetEmployee: `${employee.name} (${employee.code})`,
+      oldValue: 'Chưa có nhận xét HR',
+      newValue: comment,
+      reason: 'HR ghi nhận xét rà soát cho phiếu đánh giá có độ lệch điểm.'
+    });
+
+    // Notify Manager if requested
+    if (notifyCheck && notifyCheck.checked && employee.managerId) {
+      window.AppStorage.addNotification({
+        periodId: period.id,
+        recipientRole: 'manager',
+        recipientUserId: employee.managerId,
+        department: employee.department,
+        title: `HR đã rà soát phiếu đánh giá: ${employee.name}`,
+        message: `Ý kiến HR: "${comment}". Vui lòng kiểm tra lại phiếu đánh giá.`,
+        type: 'info'
+      });
+    }
+
+    // Close modal & toast
+    const modal = document.getElementById('hr-comment-modal');
+    if (modal) modal.remove();
+
+    window.ShellView.showToast('Thành công', `Đã lưu nhận xét rà soát cho nhân viên ${employee.name}.`, 'success');
+    App.navigateTo('hr-calibration');
+  },
+
+  // Modal: Nhận xét hàng loạt cho nhiều phiếu lệch điểm cùng lúc
+  openBulkCommentModal: function () {
+    const checkedBoxes = Array.from(document.querySelectorAll('.calib-row-check:checked'));
+    const selectedIds = checkedBoxes.map(cb => cb.value);
+
+    if (selectedIds.length === 0) {
+      window.ShellView.showToast('Chú ý', 'Vui lòng chọn ít nhất 1 phiếu cần rà soát để nhận xét hàng loạt.', 'warning');
+      return;
+    }
+
+    const data = window.AppStorage.load();
+    const period = window.AppStorage.getActivePeriod();
+    const evals = data.evaluations[period.id] || [];
+    const selectedEmployees = data.employees.filter(e => selectedIds.includes(e.id));
+
+    const modalHtml = `
+      <div class="modal-backdrop" id="bulk-comment-modal">
+        <div class="modal-dialog" style="max-width: 650px;">
+          <div class="modal-header">
+            <div class="modal-title">📝 Nhận Xét Rà Soát Hàng Loạt (${selectedIds.length} nhân sự)</div>
+            <button onclick="document.getElementById('bulk-comment-modal').remove()" style="font-size: 20px;">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div style="margin-bottom: 12px;">
+              <div style="font-size: 13px; font-weight: 600; margin-bottom: 6px;">Danh sách ${selectedIds.length} nhân sự được áp dụng:</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; padding: 8px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0;">
+                ${selectedEmployees.map(emp => {
+      const ev = evals.find(e => e.employeeId === emp.id);
+      const diff = (ev && ev.selfTotalScore !== null && ev.managerTotalScore !== null) ? Math.abs(ev.selfTotalScore - ev.managerTotalScore).toFixed(2) : '0';
+      return `
+                    <span class="badge" style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; font-size: 12px; padding: 4px 8px;">
+                      <b>${emp.name}</b> (${emp.code}) — Lệch: ${diff}đ
+                    </span>
+                  `;
+    }).join('')}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Chọn mẫu nhận xét hàng loạt nhanh (1-click)</label>
+              <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;">
+                <button type="button" class="btn btn-sm btn-secondary" style="text-align: left; justify-content: flex-start;" onclick="HRViews.applyBulkTemplate('Đề nghị Quản lý trực tiếp và Nhân viên tổ chức đối thoại lại để làm rõ minh chứng các tiêu chí có độ lệch điểm lớn.')">
+                  📋 1. Đề nghị Quản lý và Nhân viên đối thoại lại minh chứng
+                </button>
+                <button type="button" class="btn btn-sm btn-secondary" style="text-align: left; justify-content: flex-start;" onclick="HRViews.applyBulkTemplate('Ghi nhận điểm tự chấm có chênh lệch; HR đề xuất giữ nguyên điểm đánh giá của Quản lý sau khi rà soát hồ sơ.')">
+                  ⚖️ 2. Giữ nguyên điểm Quản lý sau khi rà soát hồ sơ
+                </button>
+                <button type="button" class="btn btn-sm btn-secondary" style="text-align: left; justify-content: flex-start;" onclick="HRViews.applyBulkTemplate('Yêu cầu Quản lý bổ sung thêm dữ liệu đo lường cụ thể cho các tiêu chí có chênh lệch trước khi trình Giám đốc.')">
+                  🔍 3. Yêu cầu Quản lý bổ sung dữ liệu đo lường cụ thể
+                </button>
+                <button type="button" class="btn btn-sm btn-secondary" style="text-align: left; justify-content: flex-start;" onclick="HRViews.applyBulkTemplate('Đã rà soát: Độ lệch nằm trong phạm vi chấp nhận được, thống nhất chuyển kết quả trình Giám đốc phê duyệt.')">
+                  🎯 4. Đã rà soát hợp lệ, thống nhất trình Giám đốc
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Nội dung nhận xét chung áp dụng đồng loạt <span class="required">*</span></label>
+              <textarea id="input-bulk-hr-comment" class="form-control" rows="4" placeholder="Nhập nội dung nhận xét hoặc chọn 1 trong các mẫu ở trên..."></textarea>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                <input type="checkbox" id="notify-managers-bulk" checked>
+                <span>Gửi thông báo nhắc nhở đến Quản lý trực tiếp của các nhân sự này</span>
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="document.getElementById('bulk-comment-modal').remove()">Hủy</button>
+            <button class="btn btn-primary" onclick="HRViews.saveBulkComments(${JSON.stringify(selectedIds)})">Áp dụng cho ${selectedIds.length} nhân sự</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+  },
+
+  applyBulkTemplate: function (text) {
+    const el = document.getElementById('input-bulk-hr-comment');
+    if (el) el.value = text;
+  },
+
+  saveBulkComments: function (selectedIds) {
+    const commentEl = document.getElementById('input-bulk-hr-comment');
+    const notifyCheck = document.getElementById('notify-managers-bulk');
+    const comment = (commentEl?.value || '').trim();
+
+    if (!comment) {
+      alert('Vui lòng nhập nội dung nhận xét trước khi áp dụng.');
+      return;
+    }
+
+    const data = window.AppStorage.load();
+    const period = window.AppStorage.getActivePeriod();
+    const evals = data.evaluations[period.id] || [];
+
+    const managerIdsToNotify = new Map();
+
+    selectedIds.forEach(id => {
+      const emp = data.employees.find(e => e.id === id);
+      const ev = evals.find(e => e.employeeId === id);
+      if (ev) {
+        ev.hrComment = comment;
+        ev.hrCommentAt = new Date().toISOString();
+        ev.hrCommentBy = 'Nguyễn Văn HR';
+      }
+      if (emp && emp.managerId) {
+        managerIdsToNotify.set(emp.managerId, { managerId: emp.managerId, department: emp.department });
+      }
+    });
+
+    window.AppStorage.save(data);
+
+    // Add bulk Audit Log
+    window.AppStorage.addAuditLog({
+      periodId: period.id,
+      periodName: period.name,
+      actorName: 'Nguyễn Văn HR',
+      actorRole: 'HR / Admin',
+      actionType: 'HR_BULK_COMMENT',
+      targetEmployee: `${selectedIds.length} nhân sự được chọn`,
+      oldValue: 'Chưa có ý kiến nhận xét',
+      newValue: comment,
+      reason: `HR ghi nhận xét rà soát hàng loạt cho ${selectedIds.length} phiếu có độ lệch điểm.`
+    });
+
+    // Send notifications to relevant managers
+    if (notifyCheck && notifyCheck.checked) {
+      managerIdsToNotify.forEach(item => {
+        window.AppStorage.addNotification({
+          periodId: period.id,
+          recipientRole: 'manager',
+          recipientUserId: item.managerId,
+          department: item.department,
+          title: `HR đã rà soát các phiếu đánh giá lệch điểm phòng ban`,
+          message: `HR đã ghi ý kiến rà soát hàng loạt: "${comment}". Vui lòng kiểm tra lại các phiếu đánh giá liên quan.`,
+          type: 'info'
+        });
+      });
+    }
+
+    // Close modal & toast
+    const modal = document.getElementById('bulk-comment-modal');
+    if (modal) modal.remove();
+
+    window.ShellView.showToast('Thành công', `Đã cập nhật nhận xét thành công cho ${selectedIds.length} nhân sự!`, 'success');
+    App.navigateTo('hr-calibration');
   }
 };
